@@ -10,6 +10,7 @@ import {
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { MOCK_JOBS } from "../utils/mockData";
+import { base44 } from "../services/base44";
 
 export const JobDetails = () => {
   const { id } = useParams();
@@ -17,12 +18,24 @@ export const JobDetails = () => {
   const [job, setJob] = useState<any>(null);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-        const foundJob = MOCK_JOBS.find(j => j.id === id) || MOCK_JOBS[0];
-        setJob(foundJob);
-        setLoading(false);
-    }, 500);
+    const loadJob = async () => {
+        try {
+            // Try fetch from service first
+            const foundJobs = await base44.entities.Job.filter({ id });
+            if (foundJobs.length > 0) {
+                setJob(foundJobs[0]);
+            } else {
+                 // Fallback to mock data directly if not found via service
+                 const foundJob = MOCK_JOBS.find(j => j.id === id);
+                 if (foundJob) setJob(foundJob);
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+    loadJob();
   }, [id]);
 
   if (loading) {
@@ -34,6 +47,12 @@ export const JobDetails = () => {
   }
 
   if (!job) return <div>Job not found</div>;
+
+  // Normalize poster data
+  const posterName = job.postedBy?.name || job.farmer_name || "Unknown Farmer";
+  const posterAvatar = job.postedBy?.avatar || job.farmer_photo;
+  const posterRating = job.postedBy?.rating || 0;
+  const posterId = job.postedBy?.id || job.farmer_id;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -90,7 +109,7 @@ export const JobDetails = () => {
 
           <div className="flex items-center gap-2 mt-4 text-gray-600">
             <MapPin className="w-4 h-4 text-emerald-500" />
-            <span>{job.location}</span>
+            <span>{job.location || job.location_name}</span>
           </div>
         </Card>
       </motion.div>
@@ -104,12 +123,12 @@ export const JobDetails = () => {
       </motion.div>
 
       {/* Tags */}
-      {job.tags && (
+      {(job.tags || job.required_skills) && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <Card className="p-6">
-                <h2 className="font-semibold mb-3">Tags</h2>
+                <h2 className="font-semibold mb-3">Requirements</h2>
                 <div className="flex flex-wrap gap-2">
-                    {job.tags.map((tag: string) => (
+                    {(job.tags || job.required_skills).map((tag: string) => (
                         <span key={tag} className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
                             {tag}
                         </span>
@@ -124,22 +143,31 @@ export const JobDetails = () => {
         <Card className="p-6">
           <h2 className="font-semibold mb-4">Posted by</h2>
           <div className="flex items-center gap-4">
-            <img 
-                src={job.postedBy.avatar} 
-                alt={job.postedBy.name}
-                className="w-14 h-14 rounded-full bg-gray-200"
-            />
+            {posterAvatar ? (
+                 <img 
+                    src={posterAvatar} 
+                    alt={posterName}
+                    className="w-14 h-14 rounded-full bg-gray-200"
+                />
+            ) : (
+                <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xl">
+                    {posterName[0]}
+                </div>
+            )}
+           
             <div className="flex-1">
-              <p className="font-medium">{job.postedBy.name}</p>
-              <RatingStars rating={job.postedBy.rating} />
+              <p className="font-medium">{posterName}</p>
+              {posterRating > 0 && <RatingStars rating={posterRating} />}
             </div>
             <div className="flex gap-2">
               <button className="p-2 border border-gray-200 hover:bg-gray-50 rounded-full transition-colors">
                 <Phone className="w-4 h-4 text-gray-600" />
               </button>
-              <Link to={`/chat?userId=${job.postedBy.id}`} className="p-2 border border-gray-200 hover:bg-gray-50 rounded-full transition-colors">
-                <MessageSquare className="w-4 h-4 text-gray-600" />
-              </Link>
+              {posterId && (
+                <Link to={`/chat?userId=${posterId}`} className="p-2 border border-gray-200 hover:bg-gray-50 rounded-full transition-colors">
+                    <MessageSquare className="w-4 h-4 text-gray-600" />
+                </Link>
+              )}
             </div>
           </div>
         </Card>

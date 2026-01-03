@@ -75,7 +75,7 @@ export const ToolDetails = () => {
       await base44.entities.ToolBooking.create({
         tool_id: tool.id,
         tool_name: tool.name,
-        tool_image: tool.images?.[0],
+        tool_image: tool.images?.[0] || tool.image,
         renter_id: profile.id,
         renter_name: profile.full_name,
         owner_id: tool.owner_id,
@@ -122,6 +122,9 @@ export const ToolDetails = () => {
   const isOwner = profile?.id === tool.owner_id;
   const days = dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) + 1 : 0;
   const totalAmount = tool.daily_rate ? tool.daily_rate * days : tool.hourly_rate * 8 * days;
+  
+  // Normalize images
+  const images = tool.images || (tool.image ? [tool.image] : []);
 
   return (
     <div className="pb-24">
@@ -136,19 +139,19 @@ export const ToolDetails = () => {
           <ArrowLeft className="w-5 h-5" />
         </Button>
 
-        {tool.images?.length > 0 ? (
+        {images.length > 0 ? (
           <>
             <img
-              src={tool.images[currentImageIndex]}
+              src={images[currentImageIndex]}
               alt={tool.name}
               className="w-full h-full object-cover"
             />
-            {tool.images.length > 1 && (
+            {images.length > 1 && (
               <>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : tool.images.length - 1))}
+                  onClick={() => setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
                   className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full"
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -156,13 +159,13 @@ export const ToolDetails = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setCurrentImageIndex((prev) => (prev < tool.images.length - 1 ? prev + 1 : 0))}
+                  onClick={() => setCurrentImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
                   className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm rounded-full"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </Button>
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                  {tool.images.map((_: any, i: number) => (
+                  {images.map((_: any, i: number) => (
                     <div
                       key={i}
                       className={`w-2 h-2 rounded-full ${i === currentImageIndex ? "bg-white" : "bg-white/50"}`}
@@ -358,7 +361,11 @@ export const ToolDetails = () => {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar />
+                        <Calendar 
+                          mode="range"
+                          selected={dateRange}
+                          onSelect={setDateRange}
+                        />
                       </PopoverContent>
                     </Popover>
                   </div>

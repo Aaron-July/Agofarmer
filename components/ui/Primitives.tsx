@@ -141,7 +141,38 @@ export const Switch = ({ className = '', checked, onCheckedChange, ...props }: a
     </button>
 );
 
-export const Popover = ({ children }: any) => <div className="relative inline-block">{children}</div>;
+export const Popover = ({ children }: any) => <div className="relative inline-block w-full">{children}</div>;
 export const PopoverTrigger = ({ asChild, children, ...props }: any) => React.cloneElement(children, props);
-export const PopoverContent = ({ className = '', children }: any) => <div className={`absolute z-50 w-72 rounded-md border border-gray-200 bg-white p-4 shadow-md outline-none animate-in fade-in-0 zoom-in-95 ${className}`}>{children}</div>;
-export const Calendar = ({ className = '', ...props }: any) => <div className={`p-3 bg-white border rounded-lg ${className}`}>Calendar Mock</div>;
+export const PopoverContent = ({ className = '', children }: any) => <div className={`absolute z-50 w-full rounded-md border border-gray-200 bg-white p-4 shadow-lg outline-none animate-in fade-in-0 zoom-in-95 mt-2 ${className}`}>{children}</div>;
+
+export const Calendar = ({ mode, selected, onSelect, className = '', ...props }: any) => {
+  if (mode === 'range') {
+    return (
+      <div className={`p-4 bg-white space-y-4 ${className}`}>
+        <div className="grid grid-cols-2 gap-4">
+            <div>
+               <label className="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
+               <input 
+                 type="date" 
+                 className="w-full p-2 border rounded-md text-sm"
+                 value={selected?.from ? selected.from.toISOString().split('T')[0] : ''}
+                 onChange={(e) => onSelect({...selected, from: e.target.value ? new Date(e.target.value) : undefined})}
+               />
+            </div>
+            <div>
+               <label className="block text-xs font-medium text-gray-500 mb-1">End Date</label>
+               <input 
+                 type="date" 
+                 className="w-full p-2 border rounded-md text-sm"
+                 value={selected?.to ? selected.to.toISOString().split('T')[0] : ''}
+                 min={selected?.from ? selected.from.toISOString().split('T')[0] : ''}
+                 onChange={(e) => onSelect({...selected, to: e.target.value ? new Date(e.target.value) : undefined})}
+               />
+            </div>
+        </div>
+        <p className="text-xs text-gray-400 text-center">Select your rental period</p>
+      </div>
+    );
+  }
+  return <div className={`p-3 bg-white border rounded-lg ${className}`}>Calendar Mock</div>;
+};
