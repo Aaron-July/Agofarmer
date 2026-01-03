@@ -1,0 +1,9 @@
+{
+  "name": "Copy of AgroFarmer Connect",
+  "description": "A platform connecting African farmers, skilled workers, and tool owners with global opportunities.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
